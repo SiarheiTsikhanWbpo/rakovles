@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ru" style="background: #1f2328">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#1f2328" />
+    <title>RL RAKOV LES — 3D-конфигуратор площадки</title>
+    <script>
+      // Диагностика до загрузки приложения: ошибки видны на экране и уходят на сервер (/api/log),
+      // даже если основной скрипт не смог запуститься (старый браузер, синтаксис, WebGL).
+      ;(function () {
+        // Приём логов есть только на Cloudflare Pages и dev/preview-серверах (на GitHub Pages его нет).
+        var canLog = /(\.pages\.dev|localhost|127\.0\.0\.1|^192\.168\.)/.test(location.hostname)
+        function send(type, data) {
+          if (!canLog) return
+          try {
+            var body = JSON.stringify({ type: type, data: data, ua: navigator.userAgent, t: Date.now() })
+            if (navigator.sendBeacon) navigator.sendBeacon('api/log', body)
+            else {
+              var x = new XMLHttpRequest()
+              x.open('POST', 'api/log')
+              x.send(body)
+            }
+          } catch (e) {}
+        }
+        function show(msg) {
+          var el = document.getElementById('boot-error')
+          if (!el) {
+            el = document.createElement('pre')
+            el.id = 'boot-error'
+            el.style.cssText =
+              'position:fixed;left:8px;right:8px;bottom:8px;z-index:99;max-height:45%;overflow:auto;white-space:pre-wrap;' +
+              'font:12px/1.4 monospace;color:#fff;background:#b3261e;padding:10px;border-radius:8px'
+            ;(document.body || document.documentElement).appendChild(el)
+          }
+          el.textContent += msg + '\n'
+        }
+        window.__report = function (type, data) {
+          send(type, data)
+          if (type !== 'boot') show(type + ': ' + (data && data.message ? data.message : JSON.stringify(data)))
+        }
+        window.addEventListener('error', function (e) {
+          window.__report('error', { message: String(e.message), source: e.filename, line: e.lineno, col: e.colno, stack: e.error && e.error.stack })
+        })
+        window.addEventListener('unhandledrejection', function (e) {
+          var r = e.reason || {}
+          window.__report('rejection', { message: String(r.message || r), stack: r.stack })
+        })
+        var gl2 = false
+        var gl1 = false
+        try {
+          var c = document.createElement('canvas')
+          gl2 = !!c.getContext('webgl2')
+          gl1 = !!c.getContext('webgl')
+        } catch (e) {}
+        send('boot', { webgl2: gl2, webgl: gl1, w: screen.width, h: screen.height, dpr: window.devicePixelRatio })
+        setTimeout(function () {
+          if (!document.querySelector('canvas')) window.__report('timeout', { message: '3D-сцена не появилась за 20 с' })
+        }, 20000)
+      })()
+    </script>
+    <script type="module" crossorigin src="/rakovles/assets/index-B-2tgdkQ.js"></script>
+    <link rel="stylesheet" crossorigin href="/rakovles/assets/index-M98bc4DP.css">
+  </head>
+  <body style="background: #1f2328; margin: 0">
+    <div id="root">
+      <div style="color: #e8873a; font: 600 16px sans-serif; text-align: center; padding-top: 40vh">RL RAKOV LES · загрузка…</div>
+    </div>
+  </body>
+</html>
